@@ -1,3 +1,4 @@
+package mclama.com;
 
 public class Main {
 
