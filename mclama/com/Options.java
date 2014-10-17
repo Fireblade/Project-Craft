@@ -5,7 +5,7 @@ public class Options {
 	private Main game;
 	
 	
-	private int TargetFps=60;
+	private int TargetFps=60; //requires restart if changed
 
 	public Options(Main game) {
 		this.game = game;

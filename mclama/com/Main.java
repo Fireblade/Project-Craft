@@ -147,7 +147,7 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 	
 	public void init(){
 		//client = new Main();
-		setSize(882,588);
+		setSize(882,492);
 		addKeyListener(this);
 		addMouseListener(this);
 		addMouseMotionListener(this);

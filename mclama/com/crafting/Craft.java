@@ -82,8 +82,16 @@ public class Craft {
 		return this.enabledGrid[x][y];
 	}
 	
+	public void setEnabled(boolean value, int x, int y){
+		this.enabledGrid[x][y] = value;
+	}
+	
 	public Item getItem(int x, int y){
 		return this.itemGrid[x][y];
+	}
+	
+	public void getItem(Item item, int x, int y){
+		this.itemGrid[x][y] = item;
 	}
 	
 	
