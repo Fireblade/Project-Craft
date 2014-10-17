@@ -36,15 +36,17 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 	private Graphics g2;
 	private Image i;
 	
-	private int x=0;
-	private Craft craft;
-	private Utility util;
+
 	private int currentFps;
 	private int mx;
 	private int my;
 	private int gridx;
 	private int gridy;
+	
+	private Craft craft;
+	private Utility util;
 	private Options opt;
+	private Statistics stats;
 
 	public Main() {
 
@@ -147,6 +149,7 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 		addKeyListener(this);
 		addMouseListener(this);
 		addMouseMotionListener(this);
+		stats = new Statistics(this);
 		craft = new Craft(this, craftGridWidth, craftGridHeight);
 		util = new Utility(this);
 		opt = new Options(this);
