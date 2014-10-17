@@ -19,30 +19,32 @@ import mclama.com.crafting.Item;
 
 public class Main extends Applet implements Runnable, KeyListener, MouseListener, MouseMotionListener{
 	
+	//Crafting Grid
 	private int craftGridWidth=12;
 	private int craftGridHeight=9;
 	private int craftGridSize=24;
 	private int craftGridXStart=288;
 	private int craftGridYStart=24;
 
+	//Base to the game
 	private static Main client;
 	private static JFrame frame;
 	private boolean gameRunning=true;
 	private long lastFpsTime;
 	private int fps;
-	private JPanel contentPane;
-	private JPanel panelLauncher;
 	
-	private Graphics g2;
-	private Image i;
+	//double buffering
+	private Graphics db_g;
+	private Image db_i;
 	
-
+	//Variables that i will use
 	private int currentFps;
 	private int mx;
 	private int my;
 	private int gridx;
 	private int gridy;
 	
+	//Api classes
 	private Craft craft;
 	private Utility util;
 	private Options opt;
@@ -76,18 +78,18 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 	public void update(Graphics g) {
 		
 		//Begin double buffer
-		if(i == null){
-			i = createImage(this.getSize().width, this.getSize().height);
-			g2 = i.getGraphics();
+		if(db_i == null){
+			db_i = createImage(this.getSize().width, this.getSize().height);
+			db_g = db_i.getGraphics();
 		}
 		
-		g2.setColor(getBackground());
-		g2.fillRect(0,0,this.getSize().width, this.getSize().height);
+		db_g.setColor(getBackground());
+		db_g.fillRect(0,0,this.getSize().width, this.getSize().height);
 		
-		g2.setColor(getForeground());
-		paint(g2);
+		db_g.setColor(getForeground());
+		paint(db_g);
 		
-		g.drawImage(i, 0, 0, this);
+		g.drawImage(db_i, 0, 0, this);
 		//end double buffer
 		
 		
