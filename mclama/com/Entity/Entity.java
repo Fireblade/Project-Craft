@@ -24,8 +24,11 @@ public class Entity {
 		
 	}
 	
-	public boolean inBounds(int x, int y){ //If we clicked the object
-		
+	public boolean inBounds(int x2, int y2){ //If we clicked the object
+		if(x2 >= x && x2 <= x+image.getWidth(game)
+		&& y2 >= y && y2 <= y+image.getHeight(game)){
+			return true;
+		}	
 		return false;
 	}
 	

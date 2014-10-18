@@ -10,10 +10,13 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
+import mclama.com.Entity.Entity;
 import mclama.com.crafting.Craft;
 import mclama.com.crafting.Item;
 
@@ -25,6 +28,13 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 	private int craftGridSize=24;
 	private int craftGridXStart=288;
 	private int craftGridYStart=24;
+	
+	//crafting variables
+	private int craft_workers=3;
+	private int craft_wood_workers=0;
+	private int craft_metal_workers=0;
+	private int craft_misc_workers=0;
+	private int craft_item_workers=0;
 
 	//Base to the game
 	private static Main client;
@@ -49,6 +59,9 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 	private Utility util;
 	private Options opt;
 	private Statistics stats;
+	
+	//Entitys
+	protected List<Entity> Entities = new ArrayList<Entity>(1024);
 
 	public Main() {
 
@@ -128,6 +141,7 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 		for(int x=0; x<craftWidth; x++){
 			for(int y=0; y<craftHeight; y++){
 				g.drawImage(itemGrid[x][y].getImage(), craftGridXStart+(x*craftGridSize), craftGridYStart+(y*craftGridSize), this);
+				//g.drawImage(itemGrid[x][y].getImage(), craftGridXStart+(x*craftGridSize), craftGridYStart+(y*craftGridSize), itemGrid[x][y].getImage().getWidth(this), itemGrid[x][y].getImage().getHeight(this),this);
 			}
 		}
 		
@@ -168,8 +182,7 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 	}
 	
 	public void stop(){
-		Thread thread = new Thread(this);
-		thread.start(); 
+		//
 	}
 	
 	public void gameLoop()
