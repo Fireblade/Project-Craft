@@ -10,12 +10,14 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.net.URL;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
+import mclama.com.Entity.Button;
 import mclama.com.Entity.Entity;
 import mclama.com.crafting.Craft;
 import mclama.com.crafting.Item;
@@ -28,6 +30,8 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 	private int craftGridSize=24;
 	private int craftGridXStart=288;
 	private int craftGridYStart=24;
+	private int craftGridXOffset=0;
+	private int craftGridXStartOffset=12;
 	
 	//crafting variables
 	private int craft_workers=3;
@@ -61,7 +65,21 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 	private Statistics stats;
 	
 	//Entitys
-	protected List<Entity> Entities = new ArrayList<Entity>(1024);
+	protected List<Entity> Ents = new ArrayList<Entity>(1024);
+	
+	//utility
+	private boolean debug_boxing=false;
+	private int debug_boxing_x=0;
+	private int debug_boxing_y=0;
+	private int debug_boxing_endx=0;
+	private int debug_boxing_endy=0;
+	
+	//inventory related
+	private Item inv_item_selected=null;
+	private boolean mouseOnScreen;
+
+
+
 
 	public Main() {
 
@@ -112,7 +130,11 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 	@Override
     public void paint(Graphics g) {
 		g.setColor(Color.GRAY);
-		g.fillRect(0,0,this.getSize().width-1, this.getSize().height-1);
+		g.fillRect(0,0,getWidth(), getHeight());
+		
+		g.setColor(Color.RED);
+		g.drawRect(0,0,getWidth()-1, getHeight()-1);
+		
 		
 		g.setColor(Color.WHITE);
 		//draw the grid
@@ -126,17 +148,15 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 			g.drawLine(craftGridXStart, craftGridYStart+(y*craftGridSize), gridXEnd, craftGridYStart+(y*craftGridSize));
 		}
 		
+		int sidePanelWidth = 11*craftGridSize;
+		int sidePanelHeight = 14*craftGridSize;
 		
-		
-		
-		g.setColor(Color.RED);
-		g.drawRect(0,0,this.getSize().width-1, this.getSize().height-1);
+		g.drawRect(24,120,sidePanelWidth,sidePanelHeight);
 		
 		//Draw items on grid
 		Item[][] itemGrid = craft.getItemGrid();
 		int craftWidth = craft.getCraftWidth();
 		int craftHeight = craft.getCraftHeight();
-		
 		
 		for(int x=0; x<craftWidth; x++){
 			for(int y=0; y<craftHeight; y++){
@@ -145,9 +165,20 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 			}
 		}
 		
+		//Draw all entities.
+		for(int i=Ents.size()-1; i>=0; i--) {
+        	Entity e = Ents.get(i);
+        	e.paint(g);
+		}
+		
+		g.setColor(Color.GREEN);
+		g.drawRect(debug_boxing_x,debug_boxing_y,debug_boxing_endx, debug_boxing_endy);
+		
+		
 		g.drawString("fps: " + currentFps, 8, 16);
 		g.drawString("mouse " + mx + "/" + my, 8, 32);
 		g.drawString("grid " + gridx + "/" + gridy, 8, 48);
+		g.drawString(debug_boxing_x + "," + debug_boxing_y + "," + debug_boxing_endx + "," + debug_boxing_endy, 8, 64);
 		
     }
 
@@ -169,6 +200,15 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 		craft = new Craft(this, craftGridWidth, craftGridHeight);
 		util = new Utility(this);
 		opt = new Options(this);
+		
+		//craftGridXStart = (Math.round((getWidth()/2)-((craftGridWidth*craftGridSize)/2)/craftGridSize))*craftGridSize;
+		craftGridXStart = (getWidth()/2)-((craftGridWidth*craftGridSize)/2);
+		craftGridXOffset= craftGridXStart % 24; //offset variable
+		craftGridXStartOffset= Math.round(craftGridXStart/craftGridSize);
+		
+		
+		
+		Ents.add(new Button(this, 800, 48, 16, 16, setImg("images/skull.png")));
 	}
 	
 	public void destroy(){
@@ -293,6 +333,21 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 	public void keyReleased(KeyEvent e) {
 		
 	}
+	
+	@Override
+	public void mouseMoved(MouseEvent e) {
+		mx = e.getX();
+		my = e.getY();
+		if(mouseOnScreen){ //Make sure mouse is on-screen
+			gridx = Math.round((mx-craftGridXOffset)/craftGridSize) - craftGridXStartOffset;
+			gridy = Math.round(my/craftGridSize) - 1;
+			if(debug_boxing){
+				debug_boxing_endx=(mx-debug_boxing_x);
+				debug_boxing_endy=(my-debug_boxing_y);
+			}
+		}
+
+	}
 
 	@Override
 	public void mouseClicked(MouseEvent e) {
@@ -300,38 +355,69 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 
 	@Override
 	public void mousePressed(MouseEvent e) {
-	}
-
-	@Override
-	public void mouseReleased(MouseEvent e) {
-		System.out.println("Mouse released at " + mx + "/" + my + " on grid location " + gridx + "/" + gridy);
-		
-		if(gridx>=0 && gridx < craftGridWidth && gridy>=0 && gridy < craftGridHeight){
-			System.out.println("Return item: " + craft.getItem(gridx, gridy).getName());
+		if(e.isAltDown()){
+			debug_boxing=true;
+			debug_boxing_x=e.getX();
+			debug_boxing_y=e.getY();
+			debug_boxing_endx=(mx-debug_boxing_x);
+			debug_boxing_endy=(my-debug_boxing_y);
 		}
 		
 	}
 
 	@Override
+	public void mouseReleased(MouseEvent e) {
+		if(mouseOnScreen){ //Make sure mouse is on-screen
+			mx = e.getX();
+			my = e.getY();
+			System.out.println("Mouse released at " + mx + "/" + my + " on grid location " + gridx + "/" + gridy);
+			
+			if(gridx>=0 && gridx < craftGridWidth && gridy>=0 && gridy < craftGridHeight){
+				System.out.println("Return item: " + craft.getItem(gridx, gridy).getName());
+			}
+			
+			
+			for(int i=Ents.size()-1; i>=0; i--) {
+	        	Entity en = Ents.get(i);
+	        	if(en instanceof Button){
+	        		if(((Button) en).inBounds(mx, my)){ //clicking in bounds?
+	        			System.out.println("You clicked me");
+	        		}
+	        	}
+			}
+			if(debug_boxing){
+				debug_boxing=false;
+				debug_boxing_endx=(mx-debug_boxing_x);
+				debug_boxing_endy=(my-debug_boxing_y);
+				System.out.println(debug_boxing_x + "," + debug_boxing_y + "," + debug_boxing_endx + "," + debug_boxing_endy 
+						+ " Distance: " + Utility.distance(debug_boxing_x,debug_boxing_y,debug_boxing_endx, debug_boxing_endy));
+			}
+		}
+	}
+
+	@Override
 	public void mouseEntered(MouseEvent e) {
+		mouseOnScreen=true;
 	}
 
 	@Override
 	public void mouseExited(MouseEvent e) {
+		mouseOnScreen=false;
 	}
 
 	@Override
 	public void mouseDragged(MouseEvent e) {
+		if(mouseOnScreen){ //Make sure mouse is on-screen
+					gridx = Math.round((mx-craftGridXOffset)/craftGridSize) - craftGridXStartOffset;
+					gridy = Math.round(my/craftGridSize) - 1;
+					if(debug_boxing){
+						debug_boxing_endx=(mx-debug_boxing_x);
+						debug_boxing_endy=(my-debug_boxing_y);
+					}
+				}
 	}
 
-	@Override
-	public void mouseMoved(MouseEvent e) {
-		mx = e.getX();
-		my = e.getY();
-		
-		gridx = Math.round(mx/craftGridSize) - 12;
-		gridy = Math.round(my/craftGridSize) - 1;
-	}
+
 	
 	
 

@@ -2,6 +2,9 @@ package mclama.com;
 
 public class Options {
 	
+	public static boolean debug_show_collision_box=true;
+	
+	
 	private Main game;
 	
 	

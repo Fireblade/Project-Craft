@@ -7,10 +7,10 @@ import mclama.com.Main;
 
 public class Entity {
 	
-	private Main game;
+	protected Main game;
 	
-	private int x,y;
-	private Image image;
+	protected int x,y;
+	protected Image image;
 
 	public Entity(Main game, int x, int y, Image image) {
 		this.x = x;
@@ -24,16 +24,9 @@ public class Entity {
 		
 	}
 	
-	public boolean inBounds(int x2, int y2){ //If we clicked the object
-		if(x2 >= x && x2 <= x+image.getWidth(game)
-		&& y2 >= y && y2 <= y+image.getHeight(game)){
-			return true;
-		}	
-		return false;
-	}
 	
 	public void paint(Graphics g){         //Paint image
-		
+		g.drawImage(image, x, y, game);
 	}
 
 }
