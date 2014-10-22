@@ -13,6 +13,7 @@ import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -73,10 +74,15 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 	private int debug_boxing_y=0;
 	private int debug_boxing_endx=0;
 	private int debug_boxing_endy=0;
+	private boolean mouseOnScreen;
+	
 	
 	//inventory related
 	private Item inv_item_selected=null;
-	private boolean mouseOnScreen;
+	private Item inv_last_item_bought=null;
+	private String inv_last_item_bought_name="";
+	private String inv_last_item_bought_text="";
+
 
 
 
@@ -174,6 +180,15 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 		g.setColor(Color.GREEN);
 		g.drawRect(debug_boxing_x,debug_boxing_y,debug_boxing_endx, debug_boxing_endy);
 		
+		g.setColor(Color.ORANGE);
+		g.drawString("Item received: ", craftGridXStart, 432);
+		g.drawRect(craftGridXStart-1, 432, 240, 25);
+		if(inv_last_item_bought!=null) {
+			g.drawImage(inv_last_item_bought.getImage(), craftGridXStart,433,inv_last_item_bought.getImage().getWidth(this),inv_last_item_bought.getImage().getHeight(this), this);
+			g.drawString(inv_last_item_bought_name, craftGridXStart+inv_last_item_bought.getImage().getWidth(this)+2, 444);
+			g.drawString(inv_last_item_bought_text, craftGridXStart+inv_last_item_bought.getImage().getWidth(this)+2, 456);
+		}
+		
 		
 		g.drawString("fps: " + currentFps, 8, 16);
 		g.drawString("mouse " + mx + "/" + my, 8, 32);
@@ -209,6 +224,7 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 		
 		
 		Ents.add(new Button(this, 800, 48, 16, 16, setImg("images/skull.png")));
+		inv_last_item_bought = new Item("Core", "Trigger", 0, setImg("images/core_trigger"));
 	}
 	
 	public void destroy(){
@@ -268,7 +284,8 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 	      // us our final value to wait for
 	      // remember this is in ms, whereas our lastLoopTime etc. vars are in ns.
 	      try{
-	    	  Thread.sleep( (lastLoopTime-System.nanoTime() + OPTIMAL_TIME)/1000000);
+	    	  //Thread.sleep( (lastLoopTime-System.nanoTime() + OPTIMAL_TIME)/1000000);
+	    	  Thread.sleep(16);
 	      }catch(InterruptedException e){
 	    	  e.printStackTrace();
 	      }
@@ -305,6 +322,7 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 	
 	public Image setImg(String string) {
 		URL url = null;
+		if(!string.endsWith(".png")) string += ".png";
 		try{
 			url = getDocumentBase();
 			return getImage(url, string);
@@ -312,6 +330,24 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 			e.printStackTrace();
 		}
 		return getImage(url, "images/skull.png"); //error image
+	}
+	
+	public Item buyNewItem(int forLevel){
+		Random gen = new Random();
+		int chance = gen.nextInt(100);
+		if(chance<25) //25% chance of a Core
+		{
+			switch(gen.nextInt(20)){
+				case 0:
+					return new Item("Core", "Trigger", forLevel, setImg("images/core_trigger"));
+				case 1:
+					return new Item("Core", "Handle", forLevel, setImg("images/core_handle"));
+			}
+		} else if(chance <70){ //45% chance of finding an item.
+			
+		}
+		
+		return null; //else a 30% chance of being left with scrap nothing.
 	}
 	
 	@Override
@@ -341,10 +377,6 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 		if(mouseOnScreen){ //Make sure mouse is on-screen
 			gridx = Math.round((mx-craftGridXOffset)/craftGridSize) - craftGridXStartOffset;
 			gridy = Math.round(my/craftGridSize) - 1;
-			if(debug_boxing){
-				debug_boxing_endx=(mx-debug_boxing_x);
-				debug_boxing_endy=(my-debug_boxing_y);
-			}
 		}
 
 	}
@@ -407,6 +439,8 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 
 	@Override
 	public void mouseDragged(MouseEvent e) {
+		mx = e.getX();
+		my = e.getY();
 		if(mouseOnScreen){ //Make sure mouse is on-screen
 					gridx = Math.round((mx-craftGridXOffset)/craftGridSize) - craftGridXStartOffset;
 					gridy = Math.round(my/craftGridSize) - 1;
