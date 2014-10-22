@@ -78,6 +78,7 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 	
 	
 	//inventory related
+	private List<Item> inv_items = new ArrayList<Item>(155);//
 	private Item inv_item_selected=null;
 	private Item inv_last_item_bought=null;
 	private String inv_last_item_bought_name="";
@@ -183,6 +184,16 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 		g.setColor(Color.ORANGE);
 		g.drawString("Item received: ", craftGridXStart, 432);
 		g.drawRect(craftGridXStart-1, 432, 240, 25);
+			
+		for(int i=0; i<inv_items.size()-1; i++) {
+        	Item e = inv_items.get(i);
+        	int x = i % 11;
+        	int y = (int) Math.ceil(i / 11);
+        	g.drawImage(e.getImage(), 24+(x*craftGridSize), 120+(y*craftGridSize), this);
+        	if(Options.debug_show_inventory_numbers) g.drawString((i+1)+"",26+(x*craftGridSize), 136+(y*craftGridSize));
+        	//System.out.println(i + ",," + x + "," + y);
+		}
+		
 		if(inv_last_item_bought!=null) {
 			g.drawImage(inv_last_item_bought.getImage(), craftGridXStart,433,inv_last_item_bought.getImage().getWidth(this),inv_last_item_bought.getImage().getHeight(this), this);
 			g.drawString(inv_last_item_bought_name, craftGridXStart+inv_last_item_bought.getImage().getWidth(this)+2, 444);
@@ -224,6 +235,9 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 		
 		
 		Ents.add(new Button(this, 800, 48, 16, 16, setImg("images/skull.png")));
+		for(int i=0; i<155; i++){
+			inv_items.add(new Item("Core", "Trigger", 0, setImg("images/core_trigger")));
+		}
 		inv_last_item_bought = new Item("Core", "Trigger", 0, setImg("images/core_trigger"));
 	}
 	

@@ -11,6 +11,22 @@ public class Item {
 	private Image image;
 	private int level;
 
+	public String getPrename() {
+		return prename;
+	}
+
+	public void setPrename(String prename) {
+		this.prename = prename;
+	}
+
+	public int getLevel() {
+		return level;
+	}
+
+	public void setLevel(int level) {
+		this.level = level;
+	}
+
 	public Item(String prename,String name, int level, Image image) {
 		this.prename=prename;
 		this.name=name;
