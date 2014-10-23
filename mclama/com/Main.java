@@ -83,6 +83,7 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 	private Item inv_last_item_bought=null;
 	private String inv_last_item_bought_name="";
 	private String inv_last_item_bought_text="";
+	private int inv_buy_item_level=0;
 
 
 
@@ -185,7 +186,7 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 		g.drawString("Item received: ", craftGridXStart, 432);
 		g.drawRect(craftGridXStart-1, 432, 240, 25);
 			
-		for(int i=0; i<inv_items.size()-1; i++) {
+		for(int i=0; i<inv_items.size(); i++) {
         	Item e = inv_items.get(i);
         	int x = i % 11;
         	int y = (int) Math.ceil(i / 11);
@@ -205,6 +206,7 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 		g.drawString("mouse " + mx + "/" + my, 8, 32);
 		g.drawString("grid " + gridx + "/" + gridy, 8, 48);
 		g.drawString(debug_boxing_x + "," + debug_boxing_y + "," + debug_boxing_endx + "," + debug_boxing_endy, 8, 64);
+		g.drawString("items in inventory " + inv_items.size(), 8, 80);
 		
     }
 
@@ -235,8 +237,11 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 		
 		
 		Ents.add(new Button(this, 800, 48, 16, 16, setImg("images/skull.png")));
-		for(int i=0; i<155; i++){
-			inv_items.add(new Item("Core", "Trigger", 0, setImg("images/core_trigger")));
+		for(int i=0; i<2; i++){
+			Item newItem = buyNewItem(0);
+			if(newItem!=null){
+				inv_items.add(newItem);
+			}
 		}
 		inv_last_item_bought = new Item("Core", "Trigger", 0, setImg("images/core_trigger"));
 	}
@@ -351,14 +356,25 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 		int chance = gen.nextInt(100);
 		if(chance<25) //25% chance of a Core
 		{
-			switch(gen.nextInt(20)){
+			switch(gen.nextInt(Math.max(2+(forLevel/10),2))){ //A base minimum searchable items, to a maximum of the items
 				case 0:
-					return new Item("Core", "Trigger", forLevel, setImg("images/core_trigger"));
+					return new Item("Core", "Trigger", forLevel, setImg("images/core_trigger.png"));
 				case 1:
-					return new Item("Core", "Handle", forLevel, setImg("images/core_handle"));
+					return new Item("Core", "Handle", forLevel, setImg("images/core_handle.png"));
 			}
 		} else if(chance <70){ //45% chance of finding an item.
-			
+			switch(gen.nextInt(Math.max(4+(forLevel/10) + gen.nextInt(1),5))){  //A base minimum searchable items, to a maximum of the items
+				case 0:
+					return new Item("Wood", "Pole", forLevel, setImg("images/wood_pole.png"));
+				case 1:
+					return new Item("Wood", "Connector", forLevel, setImg("images/wood_connector.png"));
+				case 2:
+					return new Item("Metal", "pipe", forLevel, setImg("images/metal_pipe.png"));
+				case 3:
+					return new Item("Metal", "hallowed-plate", forLevel, setImg("images/metal_hallowed-plate.png"));
+				case 4:
+					return new Item("Metal", "sights", forLevel, setImg("images/metal_sights.png"));
+			}
 		}
 		
 		return null; //else a 30% chance of being left with scrap nothing.
@@ -376,7 +392,38 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 
 	@Override
 	public void keyPressed(KeyEvent e) {
+		if(e.getKeyCode() == KeyEvent.VK_Z){ //Temp buy new item
+			Item bought = buyNewItem(inv_buy_item_level);
+			if(bought!=null){
+				boolean inInv = isItemInInventory(bought);				
+			}else{
+				inv_last_item_bought_name="";
+				inv_last_item_bought_text="Darn, Couldn't get an item.";
+			}
+		}
 		
+	}
+
+	private boolean isItemInInventory(Item bought) {
+		inv_last_item_bought_name=bought.getName();
+		inv_last_item_bought = bought;
+		for(int i=0; i<inv_items.size(); i++) {
+        	Item e = inv_items.get(i);
+        	if((e.getPrename() + e.getName()).equals(bought.getPrename() + bought.getName())){ //
+        		System.out.println(e.getPrename() + e.getName() + " .. " + bought.getPrename() + bought.getName());
+        		if(bought.getLevel()>e.getLevel()){ //higher level than the one in our inventory
+        			e=bought;
+        			inv_last_item_bought_text="Upgraded " + bought.getName() + " to level " + bought.getLevel() + ".";
+        		}
+        		else{
+        			inv_last_item_bought_text="Found a duplicate level " + bought.getLevel() + " " + bought.getName() + ", Discarding.";
+        		}
+        		return true;
+        	}
+		}
+		inv_last_item_bought_text="Found a new item! " + bought.getName() + " level " + bought.getLevel() + ".";
+		inv_items.add(bought);
+		return false;
 	}
 
 	@Override
@@ -392,6 +439,8 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 			gridx = Math.round((mx-craftGridXOffset)/craftGridSize) - craftGridXStartOffset;
 			gridy = Math.round(my/craftGridSize) - 1;
 		}
+		
+		//TODO Show info for item under mouse
 
 	}
 
