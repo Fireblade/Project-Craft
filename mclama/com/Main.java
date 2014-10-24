@@ -25,6 +25,8 @@ import mclama.com.crafting.Item;
 
 public class Main extends Applet implements Runnable, KeyListener, MouseListener, MouseMotionListener{
 	
+	private static final int INVENTORY=1;
+	
 	//Crafting Grid
 	private int craftGridWidth=12;
 	private int craftGridHeight=9;
@@ -75,6 +77,11 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 	private int debug_boxing_endx=0;
 	private int debug_boxing_endy=0;
 	private boolean mouseOnScreen;
+	
+	//Side panel
+	private int sidePanel=1;
+	private int sidePanelX=24;
+	private int sidePanelY=120;
 	
 	
 	//inventory related
@@ -186,19 +193,23 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 		g.drawString("Item received: ", craftGridXStart, 432);
 		g.drawRect(craftGridXStart-1, 432, 240, 25);
 			
-		for(int i=0; i<inv_items.size(); i++) {
-        	Item e = inv_items.get(i);
-        	int x = i % 11;
-        	int y = (int) Math.ceil(i / 11);
-        	g.drawImage(e.getImage(), 24+(x*craftGridSize), 120+(y*craftGridSize), this);
-        	if(Options.debug_show_inventory_numbers) g.drawString((i+1)+"",26+(x*craftGridSize), 136+(y*craftGridSize));
-        	//System.out.println(i + ",," + x + "," + y);
-		}
-		
-		if(inv_last_item_bought!=null) {
-			g.drawImage(inv_last_item_bought.getImage(), craftGridXStart,433,inv_last_item_bought.getImage().getWidth(this),inv_last_item_bought.getImage().getHeight(this), this);
-			g.drawString(inv_last_item_bought_name, craftGridXStart+inv_last_item_bought.getImage().getWidth(this)+2, 444);
-			g.drawString(inv_last_item_bought_text, craftGridXStart+inv_last_item_bought.getImage().getWidth(this)+2, 456);
+		if(sidePanel==INVENTORY){
+			for(int i=0; i<inv_items.size(); i++) {
+	        	Item e = inv_items.get(i);
+	        	int x = i % 11;
+	        	int y = (int) Math.ceil(i / 11);
+	        	g.drawImage(e.getImage(), sidePanelX+(x*craftGridSize), sidePanelY+(y*craftGridSize), this);
+	        	if(Options.debug_show_inventory_numbers) 
+	        		g.drawString((i+1)+"",sidePanelX+2+(x*craftGridSize), sidePanelY+16+(y*craftGridSize));
+	        	g.drawString(e.getLevel()+"",38+(x*craftGridSize), 142+(y*craftGridSize));
+	        	//System.out.println(i + ",," + x + "," + y);
+			}
+			
+			if(inv_last_item_bought!=null) {
+				g.drawImage(inv_last_item_bought.getImage(), craftGridXStart,433,inv_last_item_bought.getImage().getWidth(this),inv_last_item_bought.getImage().getHeight(this), this);
+				g.drawString(inv_last_item_bought_name, craftGridXStart+inv_last_item_bought.getImage().getWidth(this)+2, 444);
+				g.drawString(inv_last_item_bought_text, craftGridXStart+inv_last_item_bought.getImage().getWidth(this)+2, 456);
+			}
 		}
 		
 		
@@ -412,7 +423,8 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
         	if((e.getPrename() + e.getName()).equals(bought.getPrename() + bought.getName())){ //
         		System.out.println(e.getPrename() + e.getName() + " .. " + bought.getPrename() + bought.getName());
         		if(bought.getLevel()>e.getLevel()){ //higher level than the one in our inventory
-        			e=bought;
+        			inv_items.remove(i);
+        			inv_items.add(bought);
         			inv_last_item_bought_text="Upgraded " + bought.getName() + " to level " + bought.getLevel() + ".";
         		}
         		else{
@@ -441,7 +453,31 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 		}
 		
 		//TODO Show info for item under mouse
+		if(sidePanel==INVENTORY){
+			int sidePanelWidth = 11*craftGridSize;
+			int sidePanelHeight = 14*craftGridSize;
+			if(mx >= sidePanelX & mx <= (sidePanelX+sidePanelWidth)
+			&  my >= sidePanelY & my <= (sidePanelY+sidePanelHeight)){ //If mouse is inside.
+				Item underMouse = getItemUnderMouseFromInventory(mx, my);
+				//got info, need to draw now
+			}
+		}
 
+	}
+	
+	private Item getItemUnderMouseFromInventory(int mx, int my){
+		mx = (mx-sidePanelX) / craftGridSize;
+		my = (my-sidePanelY) / craftGridSize;
+		for(int i=0; i<inv_items.size(); i++) {
+        	Item e = inv_items.get(i);
+        	int x = i % 11;
+        	int y = (int) Math.ceil(i / 11);
+        	if(mx == x & my == y){
+        		System.out.println("over " + e.getName());
+        		return e;
+        	}
+		}
+		return null;
 	}
 
 	@Override
