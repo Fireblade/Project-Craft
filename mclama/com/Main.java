@@ -1,6 +1,7 @@
 package mclama.com;
 
 import java.applet.Applet;
+import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Image;
@@ -74,14 +75,16 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 	private boolean debug_boxing=false;
 	private int debug_boxing_x=0;
 	private int debug_boxing_y=0;
-	private int debug_boxing_endx=0;
-	private int debug_boxing_endy=0;
+	private int debug_boxing_width=0;
+	private int debug_boxing_height=0;
 	private boolean mouseOnScreen;
 	
 	//Side panel
 	private int sidePanel=1;
 	private int sidePanelX=24;
 	private int sidePanelY=120;
+	private Item sidePanel_Item=null;
+	private int sidePanel_Item_Over=0;
 	
 	
 	//inventory related
@@ -187,11 +190,12 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 		}
 		
 		g.setColor(Color.GREEN);
-		g.drawRect(debug_boxing_x,debug_boxing_y,debug_boxing_endx, debug_boxing_endy);
+		g.drawRect(debug_boxing_x,debug_boxing_y,debug_boxing_width, debug_boxing_height);
 		
 		g.setColor(Color.ORANGE);
 		g.drawString("Item received: ", craftGridXStart, 432);
 		g.drawRect(craftGridXStart-1, 432, 240, 25);
+
 			
 		if(sidePanel==INVENTORY){
 			for(int i=0; i<inv_items.size(); i++) {
@@ -210,13 +214,36 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 				g.drawString(inv_last_item_bought_name, craftGridXStart+inv_last_item_bought.getImage().getWidth(this)+2, 444);
 				g.drawString(inv_last_item_bought_text, craftGridXStart+inv_last_item_bought.getImage().getWidth(this)+2, 456);
 			}
+			if(sidePanel_Item!=null){
+				if(sidePanel_Item_Over >= opt.getTargetFps()){ //if we have 1.5 seconds
+					g.setColor(Color.LIGHT_GRAY);
+					int ix = 8 + (Math.round(mx / craftGridSize)*craftGridSize);
+					int iy = 32 + (Math.round(my / craftGridSize)*craftGridSize);
+					
+					g.fillRect(ix, iy, 120, 27);
+					
+					g.setColor(Color.BLUE);
+					g.drawString(sidePanel_Item.getPrename(), ix+2, iy+12);
+					g.drawString("lvl." + sidePanel_Item.getLevel(), ix+86, iy+12);
+					g.drawString(sidePanel_Item.getName(), ix+2, iy+24);
+					
+				}
+			}
+			
+			if(getItemUnderMouseFromInventory(mx, my)!=null){
+				if(mx >= sidePanelX & mx <= (sidePanelX+sidePanelWidth)
+				&  my >= sidePanelY & my <= (sidePanelY+sidePanelHeight)){ //If mouse is inside.
+					g.setColor(Color.BLUE);
+					g.drawRect((mx / craftGridSize)*craftGridSize,(my / craftGridSize)*craftGridSize, craftGridSize-1, craftGridSize-1);
+				}
+			}
 		}
 		
-		
+		g.setColor(Color.ORANGE);
 		g.drawString("fps: " + currentFps, 8, 16);
 		g.drawString("mouse " + mx + "/" + my, 8, 32);
 		g.drawString("grid " + gridx + "/" + gridy, 8, 48);
-		g.drawString(debug_boxing_x + "," + debug_boxing_y + "," + debug_boxing_endx + "," + debug_boxing_endy, 8, 64);
+		g.drawString(debug_boxing_x + "," + debug_boxing_y + "," + debug_boxing_width + "," + debug_boxing_height, 8, 64);
 		g.drawString("items in inventory " + inv_items.size(), 8, 80);
 		
     }
@@ -330,6 +357,11 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 	}
 
 	private void doGameUpdates(double delta){
+		if(sidePanel_Item!=null){
+			if(sidePanel_Item_Over < (opt.getTargetFps()*1.5)){ //after 1.5 seconds of mouse over
+				sidePanel_Item_Over++;
+			}
+		}
 		
 //	   for (int i = 0; i < stuff.size(); i++)
 //	   {
@@ -380,11 +412,11 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 				case 1:
 					return new Item("Wood", "Connector", forLevel, setImg("images/wood_connector.png"));
 				case 2:
-					return new Item("Metal", "pipe", forLevel, setImg("images/metal_pipe.png"));
+					return new Item("Metal", "Pipe", forLevel, setImg("images/metal_pipe.png"));
 				case 3:
-					return new Item("Metal", "hallowed-plate", forLevel, setImg("images/metal_hallowed-plate.png"));
+					return new Item("Metal", "Hallowed-Plate", forLevel, setImg("images/metal_hallowed-plate.png"));
 				case 4:
-					return new Item("Metal", "sights", forLevel, setImg("images/metal_sights.png"));
+					return new Item("Metal", "Sights", forLevel, setImg("images/metal_sights.png"));
 			}
 		}
 		
@@ -406,7 +438,7 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 		if(e.getKeyCode() == KeyEvent.VK_Z){ //Temp buy new item
 			Item bought = buyNewItem(inv_buy_item_level);
 			if(bought!=null){
-				boolean inInv = isItemInInventory(bought);				
+				boolean inInv = isNewerItem(bought);				
 			}else{
 				inv_last_item_bought_name="";
 				inv_last_item_bought_text="Darn, Couldn't get an item.";
@@ -415,17 +447,17 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 		
 	}
 
-	private boolean isItemInInventory(Item bought) {
+	private boolean isNewerItem(Item bought) {
 		inv_last_item_bought_name=bought.getName();
 		inv_last_item_bought = bought;
 		for(int i=0; i<inv_items.size(); i++) {
         	Item e = inv_items.get(i);
         	if((e.getPrename() + e.getName()).equals(bought.getPrename() + bought.getName())){ //
-        		System.out.println(e.getPrename() + e.getName() + " .. " + bought.getPrename() + bought.getName());
         		if(bought.getLevel()>e.getLevel()){ //higher level than the one in our inventory
         			inv_items.remove(i);
         			inv_items.add(bought);
         			inv_last_item_bought_text="Upgraded " + bought.getName() + " to level " + bought.getLevel() + ".";
+        			stats.setItems_Bought_Upgraded(stats.getItems_Bought_Upgraded()+1);
         		}
         		else{
         			inv_last_item_bought_text="Found a duplicate level " + bought.getLevel() + " " + bought.getName() + ", Discarding.";
@@ -435,6 +467,17 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 		}
 		inv_last_item_bought_text="Found a new item! " + bought.getName() + " level " + bought.getLevel() + ".";
 		inv_items.add(bought);
+		stats.setItems_Bought(stats.getItems_Bought()+1);
+		return false;
+	}
+	
+	private boolean isItemInInventory(Item item) {
+		for(int i=0; i<inv_items.size(); i++) {
+        	Item e = inv_items.get(i);
+        	if((e.getPrename() + e.getName()).equals(item.getPrename() + item.getName())){ //
+        		return true;
+        	}
+		}
 		return false;
 	}
 
@@ -458,8 +501,15 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 			int sidePanelHeight = 14*craftGridSize;
 			if(mx >= sidePanelX & mx <= (sidePanelX+sidePanelWidth)
 			&  my >= sidePanelY & my <= (sidePanelY+sidePanelHeight)){ //If mouse is inside.
-				Item underMouse = getItemUnderMouseFromInventory(mx, my);
-				//got info, need to draw now
+				Item tempItem = getItemUnderMouseFromInventory(mx, my);
+				if(tempItem!=sidePanel_Item){
+					sidePanel_Item = tempItem;
+					if(sidePanel_Item!=null){
+						sidePanel_Item_Over=0;
+						System.out.println("Mouse over item: " + sidePanel_Item.getName() + " level " + sidePanel_Item.getLevel());
+					}
+				}
+				
 			}
 		}
 
@@ -473,7 +523,6 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
         	int x = i % 11;
         	int y = (int) Math.ceil(i / 11);
         	if(mx == x & my == y){
-        		System.out.println("over " + e.getName());
         		return e;
         	}
 		}
@@ -490,8 +539,8 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 			debug_boxing=true;
 			debug_boxing_x=e.getX();
 			debug_boxing_y=e.getY();
-			debug_boxing_endx=(mx-debug_boxing_x);
-			debug_boxing_endy=(my-debug_boxing_y);
+			debug_boxing_width=(mx-debug_boxing_x);
+			debug_boxing_height=(my-debug_boxing_y);
 		}
 		
 	}
@@ -518,10 +567,10 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 			}
 			if(debug_boxing){
 				debug_boxing=false;
-				debug_boxing_endx=(mx-debug_boxing_x);
-				debug_boxing_endy=(my-debug_boxing_y);
-				System.out.println(debug_boxing_x + "," + debug_boxing_y + "," + debug_boxing_endx + "," + debug_boxing_endy 
-						+ " Distance: " + Utility.distance(debug_boxing_x,debug_boxing_y,debug_boxing_endx, debug_boxing_endy));
+				debug_boxing_width=(mx-debug_boxing_x);
+				debug_boxing_height=(my-debug_boxing_y);
+				System.out.println(debug_boxing_x + "," + debug_boxing_y + " > " + mx + "," + my + " Size: " +debug_boxing_width + "," + debug_boxing_height 
+						+ " Distance: " + Utility.distance(debug_boxing_x,debug_boxing_y, mx, my));
 			}
 		}
 	}
@@ -544,8 +593,8 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 					gridx = Math.round((mx-craftGridXOffset)/craftGridSize) - craftGridXStartOffset;
 					gridy = Math.round(my/craftGridSize) - 1;
 					if(debug_boxing){
-						debug_boxing_endx=(mx-debug_boxing_x);
-						debug_boxing_endy=(my-debug_boxing_y);
+						debug_boxing_width=(mx-debug_boxing_x);
+						debug_boxing_height=(my-debug_boxing_y);
 					}
 				}
 	}
