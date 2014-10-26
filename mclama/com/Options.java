@@ -5,6 +5,7 @@ public class Options {
 	public static boolean debug_show_collision_box=true;
 	public static boolean debug_show_crafting_numbers=true;
 	public static boolean debug_show_inventory_numbers=true;
+	public static boolean debug_show_mouse_click_info=false;
 	
 	
 	private Main game;

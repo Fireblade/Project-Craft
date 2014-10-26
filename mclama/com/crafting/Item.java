@@ -6,17 +6,17 @@ import java.util.Random;
 
 public class Item {
 	
-	private String prename;
+	private String preName;
 	private String name;
 	private Image image;
 	private int level;
 
-	public String getPrename() {
-		return prename;
+	public String getPreName() {
+		return preName;
 	}
 
-	public void setPrename(String prename) {
-		this.prename = prename;
+	public void setPreName(String prename) {
+		this.preName = prename;
 	}
 
 	public int getLevel() {
@@ -28,14 +28,14 @@ public class Item {
 	}
 
 	public Item(String prename,String name, int level, Image image) {
-		this.prename=prename;
+		this.preName=prename;
 		this.name=name;
 		this.level = level;
 		this.image = image;
 	}
 	
 	public Item(String name,Image image) {
-		this.prename=null;
+		this.preName=null;
 		this.name=name;
 		this.level = 0;
 		this.image = image;

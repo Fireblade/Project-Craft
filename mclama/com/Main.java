@@ -5,6 +5,9 @@ import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Image;
+import java.awt.Point;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
@@ -16,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
@@ -36,6 +40,10 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 	private int craftGridYStart=24;
 	private int craftGridXOffset=0;
 	private int craftGridXStartOffset=12;
+	private Point craftGridBuySelected=null;
+
+	private Button craftGridBuySlotYes;
+	private Button craftGridBuySlotNo;
 	
 	//crafting variables
 	private int craft_workers=3;
@@ -186,7 +194,9 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 		//Draw all entities.
 		for(int i=Ents.size()-1; i>=0; i--) {
         	Entity e = Ents.get(i);
-        	e.paint(g);
+        	if(e.isVisible()){
+        		e.paint(g);
+        	}
 		}
 		
 		g.setColor(Color.GREEN);
@@ -223,11 +233,12 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 					g.fillRect(ix, iy, 120, 27);
 					
 					g.setColor(Color.BLUE);
-					g.drawString(sidePanel_Item.getPrename(), ix+2, iy+12);
+					g.drawString(sidePanel_Item.getPreName(), ix+2, iy+12);
 					g.drawString("lvl." + sidePanel_Item.getLevel(), ix+86, iy+12);
 					g.drawString(sidePanel_Item.getName(), ix+2, iy+24);
-					
 				}
+				g.setColor(Color.ORANGE);
+				g.drawString(sidePanel_Item.getPreName() + " " + sidePanel_Item.getName(), 8, 96);
 			}
 			
 			if(getItemUnderMouseFromInventory(mx, my)!=null){
@@ -267,6 +278,10 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 		util = new Utility(this);
 		opt = new Options(this);
 		
+		
+		createButtons();
+		
+		
 		//craftGridXStart = (Math.round((getWidth()/2)-((craftGridWidth*craftGridSize)/2)/craftGridSize))*craftGridSize;
 		craftGridXStart = (getWidth()/2)-((craftGridWidth*craftGridSize)/2);
 		craftGridXOffset= craftGridXStart % 24; //offset variable
@@ -284,6 +299,39 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 		inv_last_item_bought = new Item("Core", "Trigger", 0, setImg("images/core_trigger"));
 	}
 	
+	private void createButtons() {
+		//We make use of anonymous class's here.
+		craftGridBuySlotYes = new Button(this, 490, 250, 24, 24, setImg("images/core_trigger")){
+			@Override
+			public void clickAction() {
+				if(game.getCraftGridBuySelected()!=null){
+					System.out.println("Confirmed craft tile buy at " + craftGridBuySelected.getX() + "," + craftGridBuySelected.getY());
+					game.setCraftGridBuySelected(null);
+					visible=false;
+					game.craftGridBuySlotNo.setVisible(false);
+				}
+			}
+		};
+		craftGridBuySlotYes.setVisible(false); //off by default, So don't show.
+		craftGridBuySlotNo = new Button(this, 514, 250, 24, 24, setImg("images/core_trigger")){
+			@Override
+			public void clickAction() {
+				if(game.getCraftGridBuySelected()!=null){
+					System.out.println("Declined purchase of craft tile at " + craftGridBuySelected.getX() + "," + craftGridBuySelected.getY());
+					game.setCraftGridBuySelected(null);
+					visible=false;
+					game.craftGridBuySlotYes.setVisible(false);
+				}
+			}
+		};
+		craftGridBuySlotNo.setVisible(false); //off by default, So don't show.
+		
+		
+		//Add all buttons here at the end
+		Ents.add(craftGridBuySlotYes);
+		Ents.add(craftGridBuySlotNo);
+	}
+
 	public void destroy(){
 		//Ends applet
 	}
@@ -452,7 +500,7 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 		inv_last_item_bought = bought;
 		for(int i=0; i<inv_items.size(); i++) {
         	Item e = inv_items.get(i);
-        	if((e.getPrename() + e.getName()).equals(bought.getPrename() + bought.getName())){ //
+        	if((e.getPreName() + e.getName()).equals(bought.getPreName() + bought.getName())){ //
         		if(bought.getLevel()>e.getLevel()){ //higher level than the one in our inventory
         			inv_items.remove(i);
         			inv_items.add(bought);
@@ -474,7 +522,7 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 	private boolean isItemInInventory(Item item) {
 		for(int i=0; i<inv_items.size(); i++) {
         	Item e = inv_items.get(i);
-        	if((e.getPrename() + e.getName()).equals(item.getPrename() + item.getName())){ //
+        	if((e.getPreName() + e.getName()).equals(item.getPreName() + item.getName())){ //
         		return true;
         	}
 		}
@@ -495,7 +543,6 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 			gridy = Math.round(my/craftGridSize) - 1;
 		}
 		
-		//TODO Show info for item under mouse
 		if(sidePanel==INVENTORY){
 			int sidePanelWidth = 11*craftGridSize;
 			int sidePanelHeight = 14*craftGridSize;
@@ -543,6 +590,13 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 			debug_boxing_height=(my-debug_boxing_y);
 		}
 		
+		if(e.getButton()==MouseEvent.BUTTON3){ //3 is right-click
+			if(onCraftGrid()){ //if we are right-clicking on the crafting grid
+				craftGridBuySelected=new Point(gridx,gridy);
+				craftGridBuySlotYes.setVisible(true);
+				craftGridBuySlotNo.setVisible(true);
+			}
+		}
 	}
 
 	@Override
@@ -550,27 +604,32 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 		if(mouseOnScreen){ //Make sure mouse is on-screen
 			mx = e.getX();
 			my = e.getY();
-			System.out.println("Mouse released at " + mx + "/" + my + " on grid location " + gridx + "/" + gridy);
-			
-			if(gridx>=0 && gridx < craftGridWidth && gridy>=0 && gridy < craftGridHeight){
-				System.out.println("Return item: " + craft.getItem(gridx, gridy).getName());
-			}
-			
-			
-			for(int i=Ents.size()-1; i>=0; i--) {
-	        	Entity en = Ents.get(i);
-	        	if(en instanceof Button){
-	        		if(((Button) en).inBounds(mx, my)){ //clicking in bounds?
-	        			System.out.println("You clicked me");
-	        		}
-	        	}
-			}
-			if(debug_boxing){
-				debug_boxing=false;
-				debug_boxing_width=(mx-debug_boxing_x);
-				debug_boxing_height=(my-debug_boxing_y);
-				System.out.println(debug_boxing_x + "," + debug_boxing_y + " > " + mx + "," + my + " Size: " +debug_boxing_width + "," + debug_boxing_height 
-						+ " Distance: " + Utility.distance(debug_boxing_x,debug_boxing_y, mx, my));
+			if(e.getButton()==MouseEvent.BUTTON1){ //mouse button 1
+				if(Options.debug_show_mouse_click_info)
+					System.out.println("Mouse released at " + mx + "/" + my + " on grid location " + gridx + "/" + gridy);
+				
+				if(gridx>=0 && gridx < craftGridWidth && gridy>=0 && gridy < craftGridHeight){
+					System.out.println("Return item: " + craft.getItem(gridx, gridy).getName());
+				}
+				
+				
+				for(int i=Ents.size()-1; i>=0; i--) {
+		        	Entity en = Ents.get(i);
+		        	if(en instanceof Button){
+		        		if(((Button) en).inBounds(mx, my)){ //clicking in bounds?
+		        			if(en.isVisible()){
+		        				en.clickAction();
+		        			}
+		        		}
+		        	}
+				}
+				if(debug_boxing){
+					debug_boxing=false;
+					debug_boxing_width=(mx-debug_boxing_x);
+					debug_boxing_height=(my-debug_boxing_y);
+					System.out.println(debug_boxing_x + "," + debug_boxing_y + " > " + mx + "," + my + " Size: " +debug_boxing_width + "," + debug_boxing_height 
+							+ " Distance: " + Utility.distance(debug_boxing_x,debug_boxing_y, mx, my));
+				}
 			}
 		}
 	}
@@ -598,9 +657,18 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 					}
 				}
 	}
-
-
 	
+	private boolean onCraftGrid() {
+		if(gridx>=0 & gridx<craftGridWidth & gridy>=0 & gridy<craftGridHeight) return true;
+		return false;
+	}
 	
+	public Point getCraftGridBuySelected() {
+		return craftGridBuySelected;
+	}
 
+	public void setCraftGridBuySelected(Point craftGridBuySelected) {
+		this.craftGridBuySelected = craftGridBuySelected;
+	}
+	
 }

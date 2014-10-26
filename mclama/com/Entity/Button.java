@@ -3,11 +3,13 @@ package mclama.com.Entity;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Image;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 import mclama.com.Main;
 import mclama.com.Options;
 
-public class Button extends Entity {
+public class Button extends Entity{
 	
 	protected int bwidth=0, bheight=0;
 
@@ -40,5 +42,11 @@ public class Button extends Entity {
 			g.drawRect(x,y,bwidth,bheight);
 		}
 	}
+	
+	@Override
+	public void clickAction() {
+		System.out.println("Button at " + x + "," + y + " has no click action");
+	}
+
 
 }
