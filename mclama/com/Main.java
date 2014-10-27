@@ -1,13 +1,10 @@
 package mclama.com;
 
 import java.applet.Applet;
-import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.Point;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
@@ -19,9 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import javax.swing.JButton;
 import javax.swing.JFrame;
-import javax.swing.JPanel;
 
 import mclama.com.Entity.Button;
 import mclama.com.Entity.Entity;
@@ -32,6 +27,9 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 	
 	private static final int INVENTORY=1;
 	
+	public static double Money=10000000D;
+	
+
 	//Crafting Grid
 	private int craftGridWidth=12;
 	private int craftGridHeight=9;
@@ -41,9 +39,11 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 	private int craftGridXOffset=0;
 	private int craftGridXStartOffset=12;
 	private Point craftGridBuySelected=null;
-
 	private Button craftGridBuySlotYes;
 	private Button craftGridBuySlotNo;
+	private Double craftGridBuyCost=250D;
+	
+	public double craftMoney=0; //Money you receive on item craft
 	
 	//crafting variables
 	private int craft_workers=3;
@@ -86,6 +86,7 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 	private int debug_boxing_width=0;
 	private int debug_boxing_height=0;
 	private boolean mouseOnScreen;
+	DecimalFormat df = new DecimalFormat("###.##");
 	
 	//Side panel
 	private int sidePanel=1;
@@ -101,7 +102,11 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 	private Item inv_last_item_bought=null;
 	private String inv_last_item_bought_name="";
 	private String inv_last_item_bought_text="";
-	private int inv_buy_item_level=0;
+	private int inv_buy_item_level=1;
+	private Button inv_buy_level_increase;
+	private Button inv_buy_level_decrease;
+	private Button inv_buy_level;
+	private double inv_buy_item_cost=25.89D;
 
 
 
@@ -199,14 +204,25 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
         	}
 		}
 		
+		if(craftGridBuySelected!=null){ //If its not null
+			g.setColor(Color.BLUE);
+			g.drawRect(craftGridXStart+((int) craftGridBuySelected.getX()*craftGridSize), craftGridYStart+((int) craftGridBuySelected.getY()*craftGridSize), craftGridSize, craftGridSize);
+			g.drawString(makeString(craftGridBuyCost),552, 262);
+		}
+		
 		g.setColor(Color.GREEN);
 		g.drawRect(debug_boxing_x,debug_boxing_y,debug_boxing_width, debug_boxing_height);
 		
+		g.setColor(Color.BLUE);
+		//g.drawString("Item received: ", craftGridXStart, 432);
+		g.drawString(inv_buy_item_level+"", craftGridXStart+16, 423);
+		g.drawString(makeString(inv_buy_item_cost)+"", craftGridXStart+98, 423);
+		g.drawString("$ " + makeString(getMoney()), getWidth()-240, getHeight()-48);
 		g.setColor(Color.ORANGE);
-		g.drawString("Item received: ", craftGridXStart, 432);
 		g.drawRect(craftGridXStart-1, 432, 240, 25);
 
-			
+		
+		
 		if(sidePanel==INVENTORY){
 			for(int i=0; i<inv_items.size(); i++) {
 	        	Item e = inv_items.get(i);
@@ -301,10 +317,18 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 	
 	private void createButtons() {
 		//We make use of anonymous class's here.
-		craftGridBuySlotYes = new Button(this, 490, 250, 24, 24, setImg("images/core_trigger")){
+		craftGridBuySlotYes = new Button(this, 490, 250, 24, 16, setImg("images/utility/yes.png")){
 			@Override
 			public void clickAction() {
 				if(game.getCraftGridBuySelected()!=null){
+					if(getMoney()>=craftGridBuyCost){
+						int xx = (int) craftGridBuySelected.getX();
+						int yy = (int) craftGridBuySelected.getY();
+						if(craft.isItemConnected(xx, yy)){
+							setMoney(getMoney()-craftGridBuyCost);
+							craft.unlockGrid(xx, yy);
+						}
+					}
 					System.out.println("Confirmed craft tile buy at " + craftGridBuySelected.getX() + "," + craftGridBuySelected.getY());
 					game.setCraftGridBuySelected(null);
 					visible=false;
@@ -313,7 +337,7 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 			}
 		};
 		craftGridBuySlotYes.setVisible(false); //off by default, So don't show.
-		craftGridBuySlotNo = new Button(this, 514, 250, 24, 24, setImg("images/core_trigger")){
+		craftGridBuySlotNo = new Button(this, 520, 250, 24, 16, setImg("images/utility/no.png")){
 			@Override
 			public void clickAction() {
 				if(game.getCraftGridBuySelected()!=null){
@@ -325,11 +349,54 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 			}
 		};
 		craftGridBuySlotNo.setVisible(false); //off by default, So don't show.
+		inv_buy_level_increase = new Button(this, craftGridXStart+52, 410, 16, 16, setImg("images/utility/addition.png")){
+			@Override
+			public void clickAction() {
+				inv_buy_item_level++;
+				changeBuyItemCost();
+			}
+		};
+		inv_buy_level_decrease = new Button(this, craftGridXStart+8, 410, 16, 16, setImg("images/utility/subtraction.png")){
+			@Override
+			public void clickAction() {
+				inv_buy_item_level--;
+				inv_buy_item_level = Math.max(1, inv_buy_item_level);
+				changeBuyItemCost();
+			}
+		};
+		inv_buy_level = new Button(this, craftGridXStart+74, 410, 24, 16, setImg("images/utility/buy.png")){
+			@Override
+			public void clickAction() {
+				testAndBuyItem();
+			}
+		};
 		
 		
 		//Add all buttons here at the end
 		Ents.add(craftGridBuySlotYes);
 		Ents.add(craftGridBuySlotNo);
+		Ents.add(inv_buy_level_increase);
+		Ents.add(inv_buy_level_decrease);
+		Ents.add(inv_buy_level);
+	}
+
+	protected void testAndBuyItem() {
+		if(getMoney()>=inv_buy_item_cost){
+			Item bought = buyNewItem(inv_buy_item_level);
+			if(bought!=null){
+				boolean inInv = isNewerItem(bought);				
+			}else{
+				inv_last_item_bought_name="";
+				inv_last_item_bought_text="Darn, Couldn't get an item.";
+			}
+			setMoney(getMoney()-inv_buy_item_cost);
+		}
+	}
+
+	protected void changeBuyItemCost() {
+		double itemCost = (22*inv_buy_item_level) *(Math.pow(1.135,(inv_buy_item_level)));
+		itemCost *= Math.sqrt(Math.pow(1.075,(inv_buy_item_level)));
+		inv_buy_item_cost = itemCost;
 	}
 
 	public void destroy(){
@@ -483,16 +550,12 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 
 	@Override
 	public void keyPressed(KeyEvent e) {
-		if(e.getKeyCode() == KeyEvent.VK_Z){ //Temp buy new item
-			Item bought = buyNewItem(inv_buy_item_level);
-			if(bought!=null){
-				boolean inInv = isNewerItem(bought);				
-			}else{
-				inv_last_item_bought_name="";
-				inv_last_item_bought_text="Darn, Couldn't get an item.";
-			}
+		if(e.getKeyCode()==KeyEvent.VK_Z){
+			testAndBuyItem();
 		}
-		
+		if(e.getKeyCode()==KeyEvent.VK_P){
+			craft.setItem(new Item("Core", "Trigger", inv_buy_item_level, setImg("images/core_trigger.png")), 6, 5);
+		}
 	}
 
 	private boolean isNewerItem(Item bought) {
@@ -527,6 +590,16 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
         	}
 		}
 		return false;
+	}
+	
+	public String makeString(Double make){
+		if(make>=1000000000) {
+			return df.format(make/1000000000)+"b"; }
+		else if(make>=1000000) {
+				return df.format(make/1000000)+"m"; }
+			else if(make>=1000) {
+				return df.format(make/1000)+"k"; }
+		return df.format(make);
 	}
 
 	@Override
@@ -671,4 +744,18 @@ public class Main extends Applet implements Runnable, KeyListener, MouseListener
 		this.craftGridBuySelected = craftGridBuySelected;
 	}
 	
+	public static double getMoney() {
+		return Money;
+	}
+
+	public static void setMoney(double money) {
+		Money = money;
+	}
+	
+	
 }
+
+
+
+
+

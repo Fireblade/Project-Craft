@@ -2,10 +2,12 @@ package mclama.com;
 
 public class Options {
 	
-	public static boolean debug_show_collision_box=true;
+	public static boolean debug_show_collision_box=false;
 	public static boolean debug_show_crafting_numbers=true;
 	public static boolean debug_show_inventory_numbers=true;
 	public static boolean debug_show_mouse_click_info=false;
+	
+	public static boolean using_scientific_numbers=false;
 	
 	
 	private Main game;
