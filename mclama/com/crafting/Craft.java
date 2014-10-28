@@ -29,7 +29,7 @@ public class Craft {
 		
 		for(int x=0; x<craftWidth; x++){
 			for(int y=0; y<craftHeight; y++){
-				itemGrid[x][y] = new Item("blank", game.setImg("images/blank.png"));
+				itemGrid[x][y] = new Item("","blank", 0,game.setImg("images/blank.png"));
 				enabledGrid[x][y]=false;
 			}
 		}
@@ -103,7 +103,7 @@ public class Craft {
 	}
 
 	public void unlockGrid(int xx, int yy) {
-		itemGrid[xx][yy]=new Item("blank_enabled", game.setImg("images/blank_enabled.png"));
+		itemGrid[xx][yy]=new Item("", "blank_enabled", 0, game.setImg("images/blank_enabled.png"));
 		setEnabled(true, xx, yy);
 	}
 	
@@ -125,6 +125,7 @@ public class Craft {
 		int miscItems=0;
 		for(int x=0; x<craftWidth; x++){
 			for(int y=0; y<craftHeight; y++){
+				//System.out.println(x + ", " + y);
 				if(itemGrid[x][y].getPreName().equals("Core")){
 					coreP = itemGrid[x][y];
 				}
@@ -139,9 +140,42 @@ public class Craft {
 				}
 			}
 		}
-		double price = (3*(Math.pow(1.135,(coreP.getLevel())))) * Math.sqrt(Math.pow(1.075,(coreP.getLevel())));
-		System.out.println(price);
+		double price = (3 * coreP.getLevel()) * Math.sqrt(Math.pow(1.1,(coreP.getLevel()))); //Base price for any Core.
+		price *= coreModifier(coreP, woodItems, metalItems, miscItems);
+		System.out.println("Craft item sells for: " + price);
 		return price;
+	}
+
+	private double coreModifier(Item coreP, int woodItems, int metalItems,
+			int miscItems) {
+		double mod=1;
+		
+		switch(coreP.getName()){
+		case "Trigger":
+			mod += (woodItems*-0.15) + (metalItems*0.15);
+			mod += findItem("MetalSights", 0.15f);
+			mod += findItem("MetalPipe", 0.05f);
+			mod += findItem("MetalHallowed-Plate", 0.05f);
+			break;
+		
+		case "Handle":
+			mod += (woodItems*0.15) + (metalItems*-0.15);
+			break;
+		}
+		
+		return mod;
+	}
+
+	private double findItem(String string, float value) {
+		for(int x=0; x<craftWidth; x++){
+			for(int y=0; y<craftHeight; y++){
+				//System.out.println(x + ", " + y);
+				if((itemGrid[x][y].getPreName() + itemGrid[x][y].getName()).equals(string)){
+					return value;
+				}
+			}
+		}
+		return 0;
 	}
 	
 	
