@@ -152,6 +152,11 @@ public class Craft {
 		
 		switch(coreP.getName()){
 		case "Trigger":
+			//Get shape
+			//get items
+			//calculate items
+			//check if specific database item (unique)
+			//set variables
 			mod += (woodItems*-0.15) + (metalItems*0.15);
 			mod += findItem("MetalSights", 0.15f);
 			mod += findItem("MetalPipe", 0.05f);
